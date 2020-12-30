@@ -33,62 +33,39 @@ class CalculatorApplicationTests {
 		assertNotNull(calculator);
 	}
 	// helper moc methods ==================================================================
-	private String httpGetRequestConstructor (String apiTemplate, String calcFunction, String firstParam, int firstParamValue, String secondParam, int secondParamValue) {
-		return String.format(apiTemplate, calcFunction, firstParam, firstParamValue, secondParam, secondParamValue);
-	}
-	private String httpGetRequestConstructor (String apiTemplate, String calcFunction, String firstParam, int firstParamValue) {
-		return String.format(apiTemplate, calcFunction, firstParam, firstParamValue);
-	}
-	private String httpGetRequestConstructor (String apiTemplate, String calcFunction) {
-		return String.format(apiTemplate, calcFunction);
-	}
-	private String httpGetRequestConstructor (String apiTemplate, String calcFunction, String firstParam, String firstParamValue, String secondParam, int secondParamValue) {
-		return String.format(apiTemplate, calcFunction, firstParam, firstParamValue, secondParam, secondParamValue);
-	}
-	private String httpGetRequestConstructor (String apiTemplate, String calcFunction, String firstParam, int firstParamValue, String secondParam, String secondParamValue) {
-		return String.format(apiTemplate, calcFunction, firstParam, firstParamValue, secondParam, secondParamValue);
-	}
-	
 	private MockHttpServletResponse getMocResponse(String httpGetRequest) throws Exception {
 		return mock.perform(MockMvcRequestBuilders.get(httpGetRequest)).andReturn().getResponse();
 	}
-	
-	private HttpStatus getHttpStatus(MockHttpServletResponse respons) {
-		return HttpStatus.valueOf(respons.getStatus());
+	private HttpStatus getHttpStatus(String httpGetRequest) throws Exception {
+		return HttpStatus.valueOf(getMocResponse(httpGetRequest).getStatus());
 	}
 	// common test methods ==================================================================
 	private void normal(String calcFunction, int firstParamValue, int secondParamValue, String expectedResult) throws Exception {
-		MockHttpServletResponse respons = getMocResponse(httpGetRequestConstructor("%s?%s=%d&%s=%d", calcFunction, FIRST_PARAM, firstParamValue, SECOND_PARAM, secondParamValue));
-		assertEquals(OK, getHttpStatus(respons));
+		String httpRequest = String.format("%s?%s=%d&%s=%d", calcFunction, FIRST_PARAM, firstParamValue, SECOND_PARAM, secondParamValue);
+		MockHttpServletResponse respons = getMocResponse(httpRequest);
+		assertEquals(OK, getHttpStatus(httpRequest));
 		assertEquals(expectedResult, respons.getContentAsString());
 	}
 	private void missedFirstParam(String calcFunction, int secondParamValue) throws Exception {
-		MockHttpServletResponse respons = getMocResponse(httpGetRequestConstructor ("%s?%s=%d", CALCULATOR_ADD, SECOND_PARAM, 20));
-		assertEquals(BAD_REQUEST, getHttpStatus(respons));
+		assertEquals(BAD_REQUEST, getHttpStatus(String.format ("%s?%s=%d", calcFunction, SECOND_PARAM, 20)));
 	}
 	private void missedSecondParam(String calcFunction, int firstParamValue, String expectedResult) throws Exception {
-		MockHttpServletResponse respons = getMocResponse(httpGetRequestConstructor ("%s?%s=%d", calcFunction, FIRST_PARAM, firstParamValue));
-		assertEquals(OK, getHttpStatus(respons));
+		String httpRequest = String.format ("%s?%s=%d", calcFunction, FIRST_PARAM, firstParamValue);
+		MockHttpServletResponse respons = getMocResponse(httpRequest);
+		assertEquals(OK, getHttpStatus(httpRequest));
 		assertEquals(expectedResult, respons.getContentAsString());
 	}
 	private void missedParams(String calcFunction) throws Exception {
-		MockHttpServletResponse respons = getMocResponse(httpGetRequestConstructor ("%s", CALCULATOR_ADD));
-		assertEquals(BAD_REQUEST, getHttpStatus(respons));
+		assertEquals(BAD_REQUEST, getHttpStatus(String.format ("%s", calcFunction)));
 	}
 	private void wrongFirst(String calcFunction, String firstParamValue, int secondParamValue) throws Exception {
-		MockHttpServletResponse respons = getMocResponse(httpGetRequestConstructor ("%s?%s=%s&%s=%d", calcFunction, FIRST_PARAM, firstParamValue, SECOND_PARAM, secondParamValue));
-		assertEquals(BAD_REQUEST, getHttpStatus(respons));
+		assertEquals(BAD_REQUEST, getHttpStatus(String.format ("%s?%s=%s&%s=%d", calcFunction, FIRST_PARAM, firstParamValue, SECOND_PARAM, secondParamValue)));
 	}
 	private void wrongSecond(String calcFunction, int firstParamValue, String secondParamValue) throws Exception {
-		MockHttpServletResponse respons = getMocResponse(httpGetRequestConstructor ("%s?%s=%d&%s=%s", calcFunction, FIRST_PARAM, firstParamValue, SECOND_PARAM, secondParamValue));
-		assertEquals(BAD_REQUEST, getHttpStatus(respons));
+		assertEquals(BAD_REQUEST, getHttpStatus(String.format ("%s?%s=%d&%s=%s", calcFunction, FIRST_PARAM, firstParamValue, SECOND_PARAM, secondParamValue)));
 	}
 	private void wrongParams(String calcFunction, String firstParamValue, String secondParamValue) throws Exception {
-		MockHttpServletResponse respons = getResposeIfWrongParam(String.format("%s?%s=%s&%s=%s", calcFunction, FIRST_PARAM, firstParamValue, SECOND_PARAM, secondParamValue));
-		assertEquals(BAD_REQUEST, getHttpStatus(respons)); 
-	}
-	private MockHttpServletResponse getResposeIfWrongParam(String getQuery) throws Exception {
-		return mock.perform(MockMvcRequestBuilders.get(getQuery)).andReturn().getResponse();
+		assertEquals(BAD_REQUEST, getHttpStatus(String.format("%s?%s=%s&%s=%s", calcFunction, FIRST_PARAM, firstParamValue, SECOND_PARAM, secondParamValue))); 
 	}
 	// testing of "add" functionality ==================================================================
 	@Test
@@ -147,8 +124,7 @@ class CalculatorApplicationTests {
 	void divMissedParams() throws Exception { missedParams(CALCULATOR_DIV); }
 	@Test
 	void divideByZero() throws Exception {
-		MockHttpServletResponse respons = getMocResponse(httpGetRequestConstructor("%s?%s=%d&%s=%d", CALCULATOR_DIV, FIRST_PARAM, 20, SECOND_PARAM, 0));
-		assertEquals(BAD_REQUEST, getHttpStatus(respons));
+		assertEquals(BAD_REQUEST, getHttpStatus(String.format("%s?%s=%d&%s=%d", CALCULATOR_DIV, FIRST_PARAM, 20, SECOND_PARAM, 0)));
 	}
 	@Test
 	void divWrongFirst() throws Exception { wrongFirst(CALCULATOR_DIV, "abc", 20); }
@@ -159,9 +135,9 @@ class CalculatorApplicationTests {
 	// testing of API ==================================================================
 	@Test
 	void wrongApiRequest() throws Exception {
-		assertEquals(NOT_FOUND, getHttpStatus(getMocResponse(httpGetRequestConstructor("%s?%s=%d&%s=%d", "/abs", FIRST_PARAM, 20, SECOND_PARAM, 20))));
-		assertEquals(NOT_FOUND, getHttpStatus(getMocResponse(httpGetRequestConstructor ("%s?%s=%d", "/abs", SECOND_PARAM, 20))));
-		assertEquals(NOT_FOUND, getHttpStatus(getMocResponse(httpGetRequestConstructor ("%s?%s=%d", "/abs", FIRST_PARAM, 20))));
-		assertEquals(NOT_FOUND, getHttpStatus(getMocResponse(httpGetRequestConstructor ("%s", "/abs"))));
+		assertEquals(NOT_FOUND, getHttpStatus(String.format("%s?%s=%d&%s=%d", "/abs", FIRST_PARAM, 20, SECOND_PARAM, 20)));
+		assertEquals(NOT_FOUND, getHttpStatus(String.format ("%s?%s=%d", "/abs", SECOND_PARAM, 20)));
+		assertEquals(NOT_FOUND, getHttpStatus(String.format ("%s?%s=%d", "/abs", FIRST_PARAM, 20)));
+		assertEquals(NOT_FOUND, getHttpStatus(String.format ("%s", "/abs")));
 	}
 }
