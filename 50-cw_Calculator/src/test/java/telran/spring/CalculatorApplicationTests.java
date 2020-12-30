@@ -42,18 +42,16 @@ class CalculatorApplicationTests {
 	// common test methods ==================================================================
 	private void normal(String calcFunction, int firstParamValue, int secondParamValue, String expectedResult) throws Exception {
 		String httpRequest = String.format("%s?%s=%d&%s=%d", calcFunction, FIRST_PARAM, firstParamValue, SECOND_PARAM, secondParamValue);
-		MockHttpServletResponse respons = getMocResponse(httpRequest);
 		assertEquals(OK, getHttpStatus(httpRequest));
-		assertEquals(expectedResult, respons.getContentAsString());
+		assertEquals(expectedResult, getMocResponse(httpRequest).getContentAsString());
 	}
 	private void missedFirstParam(String calcFunction, int secondParamValue) throws Exception {
 		assertEquals(BAD_REQUEST, getHttpStatus(String.format ("%s?%s=%d", calcFunction, SECOND_PARAM, 20)));
 	}
 	private void missedSecondParam(String calcFunction, int firstParamValue, String expectedResult) throws Exception {
 		String httpRequest = String.format ("%s?%s=%d", calcFunction, FIRST_PARAM, firstParamValue);
-		MockHttpServletResponse respons = getMocResponse(httpRequest);
 		assertEquals(OK, getHttpStatus(httpRequest));
-		assertEquals(expectedResult, respons.getContentAsString());
+		assertEquals(expectedResult, getMocResponse(httpRequest).getContentAsString());
 	}
 	private void missedParams(String calcFunction) throws Exception {
 		assertEquals(BAD_REQUEST, getHttpStatus(String.format ("%s", calcFunction)));
